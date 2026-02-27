@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AYUSH.EXE — Platform Engineer Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--cyan:#00f5ff;--gold:#ffd700;--neon:#39ff14;--plasma:#bf5fff;--red:#ff1744;--orange:#ff6b00;}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Share Tech Mono',monospace;}
+canvas{display:block;}
+
+/* CINEMATIC */
+#cinematic{position:fixed;inset:0;z-index:1000;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;}
+#scan-grid{position:absolute;inset:0;background:linear-gradient(rgba(0,245,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,.04) 1px,transparent 1px);background-size:60px 60px;animation:gP 3s ease-in-out infinite;}
+#scan-line{position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);box-shadow:0 0 20px var(--cyan);animation:sD 2.5s linear infinite;}
+@keyframes gP{0%,100%{opacity:.4}50%{opacity:1}}
+@keyframes sD{0%{top:0}100%{top:100%}}
+@keyframes fadeUp{0%{opacity:0;transform:translateY(18px)}100%{opacity:1;transform:none}}
+
+#boot-text{position:relative;z-index:2;text-align:center;font-family:'Orbitron',monospace;color:var(--cyan);}
+#boot-title{font-size:clamp(22px,5vw,56px);font-weight:900;letter-spacing:.35em;text-shadow:0 0 40px var(--cyan);opacity:0;animation:fadeUp .8s .4s forwards;}
+#boot-sub{font-size:clamp(9px,1.3vw,15px);letter-spacing:.35em;color:#999;margin-top:10px;opacity:0;animation:fadeUp .8s 1s forwards;}
+#boot-log{margin-top:26px;font-size:clamp(9px,1.1vw,13px);color:var(--neon);text-align:left;width:clamp(260px,50vw,580px);min-height:110px;opacity:0;animation:fadeUp .5s 1.6s forwards;}
+.ll{display:block;opacity:0;white-space:nowrap;}
+
+#bpw{margin-top:32px;width:clamp(200px,42vw,520px);height:clamp(70px,13vw,160px);opacity:0;animation:fadeUp .8s 3.6s forwards;}
+#psvg{width:100%;height:100%;}
+.wr{stroke:var(--cyan);stroke-width:1.5;fill:none;stroke-dasharray:600;stroke-dashoffset:600;}
+.wa{animation:dW 1.8s forwards;}
+.wf{fill:rgba(0,245,255,.07);opacity:0;}
+.wfa{animation:fF .8s 5.8s forwards;}
+@keyframes dW{to{stroke-dashoffset:0}}
+@keyframes fF{to{opacity:1}}
+
+#start-btn{margin-top:40px;padding:17px 58px;font-family:'Orbitron',monospace;font-size:clamp(13px,2vw,20px);font-weight:900;letter-spacing:.3em;color:#000;background:var(--cyan);border:none;cursor:pointer;clip-path:polygon(14px 0%,100% 0%,calc(100% - 14px) 100%,0% 100%);box-shadow:0 0 40px var(--cyan),0 0 80px rgba(0,245,255,.3);opacity:0;animation:fadeUp .8s 6.4s forwards;transition:transform .15s,box-shadow .2s;}
+#start-btn:hover{transform:scale(1.05);box-shadow:0 0 60px var(--cyan),0 0 120px var(--cyan);}
+
+/* GAME */
+#game-wrap{position:fixed;inset:0;z-index:1;opacity:0;transition:opacity 1.5s;}
+#game-wrap.visible{opacity:1;}
+
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;z-index:100;pointer-events:none;opacity:0;transition:opacity 1s;font-family:'Orbitron',monospace;}
+#hud.visible{opacity:1;}
+#hud-top{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 18px;flex-wrap:wrap;gap:10px;}
+.hp{background:rgba(0,8,20,.82);border:1px solid rgba(0,245,255,.3);padding:9px 15px;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);backdrop-filter:blur(8px);}
+.hl{font-size:9px;letter-spacing:.25em;color:rgba(0,245,255,.55);}
+.hv{font-size:17px;font-weight:700;}
+.xpv{color:var(--gold);text-shadow:0 0 10px var(--gold);}
+.ackv{color:var(--plasma);text-shadow:0 0 10px var(--plasma);}
+.pwv{color:var(--neon);text-shadow:0 0 10px var(--neon);}
+#pbw{height:4px;background:rgba(57,255,20,.15);margin-top:4px;width:110px;}
+#pb{height:100%;background:var(--neon);width:0%;transition:width .5s;box-shadow:0 0 8px var(--neon);}
+
+/* CROSSHAIR */
+#xh{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;pointer-events:none;z-index:99;}
+#xh::before,#xh::after{content:'';position:absolute;background:var(--cyan);opacity:.65;}
+#xh::before{width:2px;height:100%;left:50%;top:0;transform:translateX(-50%);}
+#xh::after{height:2px;width:100%;top:50%;left:0;transform:translateY(-50%);}
+.xr{position:absolute;inset:0;border:1px solid var(--cyan);border-radius:50%;opacity:.45;animation:xP 2s ease-in-out infinite;}
+@keyframes xP{0%,100%{transform:scale(1);opacity:.45}50%{transform:scale(1.5);opacity:.1}}
+
+/* PORTAL LABELS */
+#plabels{position:fixed;inset:0;pointer-events:none;z-index:50;}
+.plabel{position:absolute;transform:translate(-50%,-50%);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--cyan);text-shadow:0 0 10px var(--cyan);pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .3s;background:rgba(0,5,20,.75);padding:4px 12px;border:1px solid rgba(0,245,255,.3);clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);}
+.plabel.vis{opacity:1;}
+
+/* HIT FLASH */
+#hf{position:fixed;inset:0;z-index:400;pointer-events:none;opacity:0;background:rgba(0,245,255,.2);transition:opacity .08s;}
+#hf.on{opacity:1;}
+
+/* TOAST */
+#toast{position:fixed;top:100px;right:20px;z-index:500;transform:translateX(120%);transition:transform .5s cubic-bezier(.34,1.56,.64,1);}
+#toast.show{transform:none;}
+.tb{background:rgba(0,5,15,.95);border:1px solid var(--gold);padding:14px 20px;clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);box-shadow:0 0 30px rgba(255,215,0,.25);min-width:270px;}
+.tl{font-family:'Orbitron',monospace;font-size:9px;color:var(--gold);letter-spacing:.3em;}
+.tn{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:#fff;margin-top:5px;}
+
+/* MISSION PANEL */
+#mpanel{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .4s;}
+#mpanel.active{opacity:1;pointer-events:all;}
+.pbg{position:absolute;inset:0;background:rgba(0,0,15,.88);backdrop-filter:blur(14px);}
+.pc{position:relative;z-index:2;width:min(900px,94vw);max-height:88vh;overflow-y:auto;border:1px solid rgba(0,245,255,.35);background:rgba(0,4,16,.97);clip-path:polygon(22px 0%,100% 0%,calc(100% - 22px) 100%,0% 100%);padding:40px 48px;scrollbar-width:thin;scrollbar-color:var(--cyan) transparent;}
+.pc::-webkit-scrollbar{width:4px;}.pc::-webkit-scrollbar-thumb{background:var(--cyan);}
+.mcl{position:absolute;top:18px;right:36px;font-family:'Orbitron',monospace;font-size:11px;color:var(--cyan);background:none;border:1px solid rgba(0,245,255,.4);padding:6px 16px;cursor:pointer;letter-spacing:.2em;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);transition:background .2s;}
+.mcl:hover{background:rgba(0,245,255,.12);}
+.mtag{font-size:10px;letter-spacing:.4em;color:var(--cyan);font-family:'Orbitron',monospace;}
+.mtitle{font-family:'Orbitron',monospace;font-size:clamp(20px,4vw,40px);font-weight:900;color:#fff;margin:8px 0 28px;text-shadow:0 0 30px var(--cyan);border-bottom:1px solid rgba(0,245,255,.15);padding-bottom:20px;}
+
+/* Cards */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-bottom:20px;}
+.card{background:linear-gradient(135deg,rgba(0,12,28,.97),rgba(0,25,50,.7));border:1px solid rgba(0,245,255,.2);padding:22px;position:relative;overflow:hidden;clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);}
+.card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--cyan);opacity:.6;}
+.card.gold{border-color:rgba(255,215,0,.25);}.card.gold::before{background:var(--gold);}
+.card.purple{border-color:rgba(191,95,255,.25);}.card.purple::before{background:var(--plasma);}
+.card.green{border-color:rgba(57,255,20,.25);}.card.green::before{background:var(--neon);}
+.card.orange{border-color:rgba(255,107,0,.25);}.card.orange::before{background:var(--orange);}
+.ci{font-size:26px;margin-bottom:12px;display:block;}
+.ct{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:.05em;}
+.cs{font-size:11px;color:rgba(0,245,255,.7);margin-bottom:10px;letter-spacing:.1em;}
+.cb{font-size:12px;color:rgba(255,255,255,.65);line-height:1.75;}
+.ctags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.tag{font-size:10px;padding:3px 10px;border:1px solid;letter-spacing:.08em;}
+.tag.c{color:var(--cyan);border-color:rgba(0,245,255,.35);background:rgba(0,245,255,.07);}
+.tag.g{color:var(--neon);border-color:rgba(57,255,20,.35);background:rgba(57,255,20,.07);}
+.tag.p{color:var(--plasma);border-color:rgba(191,95,255,.35);background:rgba(191,95,255,.07);}
+.tag.o{color:var(--gold);border-color:rgba(255,215,0,.35);background:rgba(255,215,0,.07);}
+.blist{list-style:none;padding:0;}
+.blist li{padding:7px 0;border-bottom:1px solid rgba(0,245,255,.07);font-size:12px;color:rgba(255,255,255,.7);display:flex;gap:10px;line-height:1.6;}
+.blist li::before{content:'►';color:var(--cyan);flex-shrink:0;}
+.ir{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(0,245,255,.08);font-size:12px;color:rgba(255,255,255,.7);}
+.ir .lb{color:var(--cyan);min-width:90px;font-size:11px;letter-spacing:.1em;}
+.stitle{font-family:'Orbitron',monospace;font-size:12px;color:var(--gold);letter-spacing:.25em;margin:22px 0 12px;border-left:3px solid var(--gold);padding-left:14px;}
+.swrap{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:14px;}
+.schip{padding:7px 16px;font-size:11px;letter-spacing:.1em;border:1px solid rgba(0,245,255,.25);color:rgba(255,255,255,.75);background:rgba(0,20,40,.6);clip-path:polygon(7px 0%,100% 0%,calc(100% - 7px) 100%,0% 100%);cursor:pointer;transition:all .2s;}
+.schip:hover,.schip.lit{background:rgba(0,245,255,.12);color:var(--cyan);border-color:rgba(0,245,255,.5);box-shadow:0 0 12px rgba(0,245,255,.2);}
+.pbox{text-align:center;padding:22px;border:1px solid rgba(57,255,20,.25);background:rgba(0,15,0,.4);margin-top:18px;}
+.pnum{font-family:'Orbitron',monospace;font-size:52px;font-weight:900;color:var(--neon);text-shadow:0 0 30px var(--neon);}
+.ptrack{height:8px;background:rgba(57,255,20,.12);margin:14px 0 8px;}
+.pfill{height:100%;background:linear-gradient(90deg,var(--neon),var(--cyan));transition:width .8s;box-shadow:0 0 10px var(--neon);}
+.certgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:15px;}
+.certcard{border:1px solid rgba(255,215,0,.3);padding:20px;text-align:center;background:linear-gradient(135deg,rgba(20,14,0,.95),rgba(40,28,0,.6));clip-path:polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%);transition:transform .25s,box-shadow .25s;cursor:default;}
+.certcard:hover{transform:translateY(-4px);box-shadow:0 0 25px rgba(255,215,0,.25);}
+.certcard .ci{font-size:30px;margin-bottom:10px;}
+.cname{font-size:11px;color:var(--gold);font-family:'Orbitron',monospace;line-height:1.5;letter-spacing:.04em;}
+.csrc{font-size:10px;color:rgba(255,255,255,.35);margin-top:5px;}
+.prow{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;margin-top:14px;}
+.pbtn{padding:15px 32px;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:.2em;border:none;cursor:pointer;clip-path:polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%);transition:transform .2s;text-decoration:none;display:inline-block;}
+.pb-blue{background:var(--cyan);color:#000;box-shadow:0 0 20px var(--cyan);}
+.pb-purple{background:var(--plasma);color:#fff;box-shadow:0 0 20px var(--plasma);}
+.pb-gold{background:var(--gold);color:#000;box-shadow:0 0 20px var(--gold);}
+.pbtn:hover{transform:scale(1.07);}
+
+/* SPEED CANVAS */
+#sc{position:fixed;inset:0;z-index:90;pointer-events:none;opacity:0;transition:opacity .3s;}
+
+/* LOG ENTRIES */
+.le{padding:9px 0;border-bottom:1px solid rgba(255,215,0,.08);display:flex;gap:12px;font-size:12px;color:rgba(255,255,255,.7);opacity:0;transform:translateX(-16px);transition:all .4s;}
+.le.on{opacity:1;transform:none;}
+.lpfx{color:var(--gold);flex-shrink:0;font-family:'Share Tech Mono',monospace;}
+
+/* PROX RING */
+#pr{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;border-radius:50%;border:2px solid var(--cyan);pointer-events:none;z-index:95;opacity:0;transition:opacity .3s;box-shadow:0 0 20px var(--cyan),inset 0 0 20px rgba(0,245,255,.05);}
+#pr.vis{opacity:.55;}
+
+/* CONTROLS */
+#ctrl{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);font-family:'Orbitron',monospace;font-size:10px;color:rgba(0,245,255,.35);letter-spacing:.15em;z-index:100;pointer-events:none;text-align:center;}
+#exh{position:fixed;bottom:50px;right:18px;font-family:'Orbitron',monospace;font-size:10px;color:rgba(0,245,255,.4);letter-spacing:.18em;z-index:100;pointer-events:none;opacity:0;transition:opacity 1s;}
+#exh.vis{opacity:1;}
+
+/* SPARKS */
+.spark{position:fixed;width:5px;height:5px;border-radius:50%;pointer-events:none;z-index:400;animation:sf 1s forwards;}
+@keyframes sf{0%{opacity:1;transform:translate(0,0)scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty))scale(0)}}
+
+/* AVATAR */
+.ava{width:100px;height:100px;border-radius:50%;border:2px solid var(--cyan);box-shadow:0 0 30px var(--cyan);display:flex;align-items:center;justify-content:center;font-size:48px;background:radial-gradient(circle at 40% 35%,#0a1a2e,#000814);flex-shrink:0;animation:xP 3s ease-in-out infinite;}
+</style>
+</head>
+<body>
+
+<!-- CINEMATIC -->
+<div id="cinematic">
+  <div id="scan-grid"></div><div id="scan-line"></div>
+  <div id="boot-text">
+    <div id="boot-title">AYUSH.EXE</div>
+    <div id="boot-sub">PLATFORM ENGINEER · FULL STACK DEVELOPER · KIIT 2027</div>
+    <div id="boot-log">
+      <span class="ll" style="animation:fadeUp .5s 1.8s forwards;">► Mounting resume data........................ <span style="color:var(--neon)">OK</span></span>
+      <span class="ll" style="animation:fadeUp .5s 2.3s forwards;">► Loading backend modules [Node · Express · Prisma]... <span style="color:var(--neon)">OK</span></span>
+      <span class="ll" style="animation:fadeUp .5s 2.8s forwards;">► Calibrating flight physics................. <span style="color:var(--neon)">OK</span></span>
+      <span class="ll" style="animation:fadeUp .5s 3.3s forwards;">► Placing 6 mission portals in sky.......... <span style="color:var(--neon)">OK</span></span>
+      <span class="ll" style="animation:fadeUp .5s 3.8s forwards;color:var(--gold);">► AIRCRAFT ONLINE — READY FOR TAKEOFF ✈</span>
+    </div>
+    <div id="bpw">
+      <svg id="psvg" viewBox="0 0 520 155" xmlns="http://www.w3.org/2000/svg">
+        <g class="wf wfa"><path d="M260,78L440,96L490,78L440,60Z" fill="rgba(0,245,255,.07)"/><path d="M260,78L100,16L60,78L100,140Z" fill="rgba(0,245,255,.05)"/></g>
+        <path class="wr wa" d="M55,78Q150,76 260,78Q390,80 490,78" style="animation-delay:.2s"/>
+        <path class="wr wa" d="M390,78Q415,60 445,66Q472,70 490,78Q472,86 445,90Q415,96 390,78" style="animation-delay:.5s"/>
+        <path class="wr wa" d="M210,78L100,16L78,21L185,80" style="animation-delay:.8s"/>
+        <path class="wr wa" d="M210,78L100,140L78,135L185,76" style="animation-delay:1s"/>
+        <path class="wr wa" d="M120,78L105,48L140,55L140,78" style="animation-delay:1.3s"/>
+        <path class="wr wa" d="M120,78L76,60L70,65L112,80" style="animation-delay:1.5s"/>
+        <path class="wr wa" d="M120,78L76,96L70,91L112,76" style="animation-delay:1.7s"/>
+        <path class="wr wa" d="M230,70Q250,56 275,56L255,70" style="animation-delay:2s;stroke:var(--gold)"/>
+        <path class="wr wa" d="M230,86Q250,100 275,100L255,86" style="animation-delay:2.2s;stroke:var(--gold)"/>
+        <path class="wr wa" d="M412,72Q428,66 443,70Q433,78 412,72" style="animation-delay:2.6s;stroke:var(--gold);stroke-width:1.2"/>
+      </svg>
+    </div>
+    <button id="start-btn" onclick="go()">▶ START MISSION</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="game-wrap"><canvas id="c"></canvas></div>
+<canvas id="sc"></canvas>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="hud-top">
+    <div class="hp"><div class="hl">PILOT</div><div class="hv" style="font-size:13px;color:#fff;">AYUSH KUMAR ✈</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <div class="hp"><div class="hl">⚡ XP</div><div class="hv xpv" id="xpv">0</div></div>
+      <div class="hp"><div class="hl">🏆 MISSIONS</div><div class="hv ackv" id="achv">0/6</div></div>
+      <div class="hp"><div class="hl">💻 TECH POWER</div><div class="hv pwv" id="pwv">0%</div><div id="pbw"><div id="pb"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PORTAL LABELS -->
+<div id="plabels"></div>
+
+<!-- PROX RING -->
+<div id="pr"></div>
+
+<!-- CROSSHAIR -->
+<div id="xh"><div class="xr"></div></div>
+
+<!-- TOAST -->
+<div id="toast"><div class="tb"><div class="tl">🏅 ACHIEVEMENT UNLOCKED</div><div class="tn" id="tntxt"></div></div></div>
+
+<!-- HIT FLASH -->
+<div id="hf"></div>
+
+<!-- MISSION PANEL -->
+<div id="mpanel">
+  <div class="pbg" onclick="closePanel()"></div>
+  <div class="pc" id="pbody"><button class="mcl" onclick="closePanel()">✕ CLOSE</button></div>
+</div>
+
+<!-- CONTROLS -->
+<div id="ctrl">MOUSE — STEER &nbsp;|&nbsp; SPACE — BOOST &nbsp;|&nbsp; FLY THROUGH GLOWING RINGS TO UNLOCK MISSIONS</div>
+<div id="exh">🎯 FLY INTO THE GLOWING PORTALS</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════
+// RESUME DATA
+// ═══════════════════════════════════════
+const R={
+  name:'Ayush Kumar',
+  title:'Platform Engineer Intern & Full Stack Developer',
+  loc:'Bhubaneswar, Odisha',
+  phone:'+91-7250963693',
+  email:'ayush.tanay2314@gmail.com',
+  edu:[
+    {inst:'KIIT University',deg:'B.Tech — CSE',period:'2023–2027',detail:'CGPA: 8.51',loc:'Bhubaneswar, India'},
+    {inst:'Delhi Public School',deg:'AISSCE (XII)',period:'2020–2022',detail:'86.6%',loc:'Ranchi, India'},
+  ],
+  exp:{
+    co:'QALAKAAR™ Labs',role:'Platform Engineer Intern',period:'Sep 2025 – Dec 2025',type:'Remote',
+    bullets:[
+      'Contributed to platform development via prototyping, feature implementation & backend workflow improvements',
+      'Developed & debugged backend APIs and internal tools to improve system reliability & efficiency',
+      'Collaborated with mentors & cross-functional teams during engineering bootcamps & design reviews',
+      'Gained experience with production-level practices, Git workflows & code reviews',
+    ]
+  },
+  projects:[
+    {name:'Campus Connect',date:'Feb 2026',col:'purple',icon:'🔗',
+     stack:['React.js','Node.js','Express.js','Prisma','PostgreSQL'],
+     bullets:['Full-stack campus networking platform to improve student communication & collaboration','RESTful backend APIs using Node.js + Express with Prisma ORM','Auth, user management & post-based interaction features','Modular React frontend for scalable, maintainable architecture']},
+    {name:'Study-Notion',date:'Aug 2025',col:'blue',icon:'📚',
+     stack:['Node.js','Express.js','MongoDB','JWT','bcrypt'],
+     bullets:['RESTful APIs for an EdTech platform using Node.js and Express','JWT-based authentication & RBAC (Student / Instructor / Admin)','OTP-based email verification & secure password hashing with bcrypt','Payment workflow for course purchases + validation middleware']},
+    {name:'Gemini AI Clone',date:'Nov 2024',col:'green',icon:'🤖',
+     stack:['React','JavaScript','HTML/CSS','Gemini API'],
+     bullets:['Frontend clone of Google Gemini AI with real-time conversational UI','Integrated Google Gemini API via Fetch for dynamic data handling','Clean, responsive interface focused on performance & UX']},
+  ],
+  skills:{
+    'Languages':['Python','Java','C','JavaScript','SQL'],
+    'Frameworks':['Node.js','Express.js','React.js','Redux','Next.js'],
+    'Databases':['MongoDB','PostgreSQL','REST APIs'],
+    'Dev Tools':['Git','GitHub','Linux','VS Code','IntelliJ IDEA'],
+  },
+  certs:[
+    {icon:'⚛️',name:'ReactJS & Redux',src:'Udemy'},
+    {icon:'🟢',name:'NodeJS with Express & MongoDB',src:'Udemy'},
+    {icon:'🐧',name:'Command Line in Linux',src:'Coursera'},
+    {icon:'🤖',name:'Microsoft AI Classroom',src:'Microsoft'},
+    {icon:'🍃',name:'MongoDB Basics',src:'MongoDB University'},
+  ],
+};
+
+// ═══════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════
+let scene,camera,renderer,clock;
+let planeGroup,engLight;
+let clouds=[],portals=[];
+let mx=0,my=0;
+let skyT=0,boostOn=false;
+let xp=0,techPow=0,doneMissions=new Set();
+let started=false;
+let sAnim;
+const sc=document.getElementById('sc');
+const sctx=sc.getContext('2d');
+
+// Flight
+let pitchA=0,bankA=0,heading=0;
+const SPD=22;
+
+// Vapor
+let vPos,vGeo,vIdx=0;
+const VCNT=350;
+
+const labelCont=document.getElementById('plabels');
+const lblEls=[];
+
+// Missions
+const MSNS=[
+  {id:0,lbl:'👤 ABOUT',       col:0x00f5ff, ach:'🏅 Future Architect',       xp:200},
+  {id:1,lbl:'💼 EXPERIENCE',  col:0xffd700, ach:'🏆 Production Ready',        xp:300},
+  {id:2,lbl:'🚀 PROJECTS',    col:0xbf5fff, ach:'💡 Full Stack Commander',    xp:400},
+  {id:3,lbl:'🛠 SKILLS',      col:0x39ff14, ach:'🔥 Stack Master Mode',       xp:350},
+  {id:4,lbl:'🏆 CERTS',       col:0xff6b00, ach:'🏆 Certified Legend',        xp:250},
+  {id:5,lbl:'📡 CONTACT',     col:0xff1744, ach:'🌌 Galaxy Brain',             xp:500},
+];
+const PPOS=[
+  new THREE.Vector3( 60,20,-130),
+  new THREE.Vector3(-90,30,-260),
+  new THREE.Vector3(110, 8,-400),
+  new THREE.Vector3(-50,38,-540),
+  new THREE.Vector3( 80,15,-670),
+  new THREE.Vector3(-70,28,-800),
+];
+
+// ═══════════════════════════════════════
+// CINEMATIC → START
+// ═══════════════════════════════════════
+function go(){
+  const b=document.getElementById('start-btn');
+  b.textContent='IGNITING...'; b.style.opacity='.6';
+  setTimeout(()=>{
+    const c=document.getElementById('cinematic');
+    c.style.cssText+='transition:opacity 1.5s;opacity:0;';
+    setTimeout(()=>{
+      c.style.display='none';
+      initThree();
+      document.getElementById('game-wrap').classList.add('visible');
+      document.getElementById('hud').classList.add('visible');
+      document.getElementById('exh').classList.add('vis');
+      started=true;
+      loop();
+    },1500);
+  },700);
+}
+
+// ═══════════════════════════════════════
+// THREE.JS INIT
+// ═══════════════════════════════════════
+function initThree(){
+  const cv=document.getElementById('c');
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  renderer.setSize(innerWidth,innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setClearColor(0x000814);
+  scene=new THREE.Scene();
+  scene.fog=new THREE.FogExp2(0x001020,0.0015);
+  camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,3000);
+  clock=new THREE.Clock();
+
+  scene.add(new THREE.AmbientLight(0x112244,3.5));
+  const sun=new THREE.DirectionalLight(0xff9966,2.5);sun.position.set(200,120,100);scene.add(sun);
+  const rim=new THREE.DirectionalLight(0x0055ff,1.2);rim.position.set(-150,80,-200);scene.add(rim);
+
+  buildPlane();
+  buildClouds();
+  buildStars();
+  buildGrid();
+  buildPortals();
+  buildLabels();
+
+  planeGroup.position.set(0,12,0);
+
+  window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);sc.width=innerWidth;sc.height=innerHeight;});
+  window.addEventListener('mousemove',e=>{mx=(e.clientX/innerWidth-.5)*2;my=(e.clientY/innerHeight-.5)*2;});
+  window.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();boostStart();}if(e.key==='Escape')closePanel();const n=parseInt(e.key);if(!isNaN(n)&&n>=1&&n<=6&&started)openPanel(n-1);});
+  window.addEventListener('keyup',e=>{if(e.code==='Space')boostEnd();});
+}
+
+// ── PLANE ──
+function buildPlane(){
+  planeGroup=new THREE.Group();
+  function M(col,em=0,ei=0){return new THREE.MeshStandardMaterial({color:col,emissive:em,emissiveIntensity:ei,metalness:.85,roughness:.15});}
+
+  // Fuselage along Z axis
+  const fuse=new THREE.Mesh(new THREE.CylinderGeometry(.2,.25,4.2,12),M(0x0d1f33,0x001122,.2));
+  fuse.rotation.x=Math.PI/2; planeGroup.add(fuse);
+
+  // Nose
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(.2,1.5,10),M(0x0099cc,0x00ccff,.7));
+  nose.rotation.x=-Math.PI/2; nose.position.z=-3.3; planeGroup.add(nose);
+
+  // Cockpit
+  const cpg=new THREE.SphereGeometry(.22,8,5,0,Math.PI*2,0,Math.PI*.5);
+  const cp=new THREE.Mesh(cpg,new THREE.MeshStandardMaterial({color:0x44ddff,transparent:true,opacity:.55,metalness:1,roughness:.0}));
+  cp.position.set(0,.22,-1.4); planeGroup.add(cp);
+
+  // Wings
+  function wing(side){
+    const wg=new THREE.Mesh(new THREE.BoxGeometry(2.8,.06,1.6),M(0x0a1a2e,0x001133,.15));
+    wg.position.set(side*1.5,-.04,-.3);
+    wg.rotation.z=side*-.06;
+    planeGroup.add(wg);
+    const lc=side<0?0xff2233:0x22ff88;
+    const lit=new THREE.Mesh(new THREE.SphereGeometry(.08,6,6),new THREE.MeshBasicMaterial({color:lc}));
+    lit.position.x=side*1.4; wg.add(lit);
+    const pl=new THREE.PointLight(lc,.8,5);pl.position.copy(lit.position);wg.add(pl);
+  }
+  wing(-1); wing(1);
+
+  // Tail
+  const tv=new THREE.Mesh(new THREE.BoxGeometry(.05,.6,.7),M(0x0a1a2e,0x001133,.12));
+  tv.position.set(0,.32,1.9); planeGroup.add(tv);
+  const th=new THREE.Mesh(new THREE.BoxGeometry(1.1,.05,.45),M(0x0a1a2e,0x001133,.12));
+  th.position.set(0,0,1.9); planeGroup.add(th);
+
+  // Engines
+  [-1,1].forEach(s=>{
+    const eg=new THREE.Mesh(new THREE.CylinderGeometry(.13,.16,.9,10),M(0x1a2a3a,0x002244,.5));
+    eg.rotation.x=Math.PI/2; eg.position.set(s*.9,-.22,0); planeGroup.add(eg);
+    const ex=new THREE.Mesh(new THREE.CylinderGeometry(.11,.13,.18,8),new THREE.MeshBasicMaterial({color:0x0088ff,transparent:true,opacity:.75}));
+    ex.rotation.x=Math.PI/2; ex.position.set(s*.9,-.22,.62); planeGroup.add(ex);
+  });
+
+  engLight=new THREE.PointLight(0x0088ff,3,8);
+  engLight.position.set(0,-.2,.8); planeGroup.add(engLight);
+
+  planeGroup.scale.setScalar(1.25);
+  scene.add(planeGroup);
+
+  // Vapor
+  vGeo=new THREE.BufferGeometry();
+  vPos=new Float32Array(VCNT*3).fill(9999);
+  vGeo.setAttribute('position',new THREE.BufferAttribute(vPos,3));
+  scene.add(new THREE.Points(vGeo,new THREE.PointsMaterial({color:0x88ccff,size:.22,transparent:true,opacity:.3,sizeAttenuation:true,depthWrite:false})));
+}
+
+// ── PORTALS ──
+function buildPortals(){
+  MSNS.forEach((m,i)=>{
+    const c=m.col;
+    const g=new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.TorusGeometry(8,.35,16,64),new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:1.3,metalness:.8,roughness:.1})));
+    g.add(new THREE.Mesh(new THREE.CircleGeometry(7.5,64),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.07,side:THREE.DoubleSide,depthWrite:false})));
+    const or=new THREE.Mesh(new THREE.TorusGeometry(9.5,.1,8,64),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.25}));
+    g.add(or);
+    const pl=new THREE.PointLight(c,2.5,35); g.add(pl);
+    g.position.copy(PPOS[i]);
+    g.rotation.y=Math.PI*.12*(i%2===0?1:-1);
+    scene.add(g);
+    portals.push({g,id:i,alive:true,c});
+  });
+}
+
+function buildLabels(){
+  MSNS.forEach((m,i)=>{
+    const el=document.createElement('div');
+    el.className='plabel'; el.textContent=m.lbl;
+    labelCont.appendChild(el); lblEls.push(el);
+  });
+}
+
+// ── ENVIRONMENT ──
+function buildClouds(){
+  const mat=new THREE.MeshStandardMaterial({color:0x2a3a55,transparent:true,opacity:.42,roughness:1,metalness:0});
+  for(let i=0;i<70;i++){
+    const g=new THREE.Group();
+    const n=3+Math.floor(Math.random()*6);
+    for(let j=0;j<n;j++){
+      const m=new THREE.Mesh(new THREE.SphereGeometry(1.5+Math.random()*2.5,7,5),mat);
+      m.position.set(j*2-n,(Math.random()-.5)*.8,(Math.random()-.5)*.8); g.add(m);
+    }
+    g.scale.setScalar(2+Math.random()*4.5);
+    g.position.set((Math.random()-.5)*700,(Math.random()-.5)*90+22,(Math.random()-.5)*900-80);
+    scene.add(g); clouds.push(g);
+  }
+}
+function buildStars(){
+  const geo=new THREE.BufferGeometry();
+  const pos=new Float32Array(4000*3);
+  for(let i=0;i<4000*3;i+=3){pos[i]=(Math.random()-.5)*2500;pos[i+1]=80+Math.random()*900;pos[i+2]=(Math.random()-.5)*2500;}
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  scene.add(new THREE.Points(geo,new THREE.PointsMaterial({color:0xffffff,size:1,transparent:true,opacity:.75})));
+}
+function buildGrid(){
+  const g=new THREE.Mesh(new THREE.PlaneGeometry(3000,3000,100,100),new THREE.MeshBasicMaterial({color:0x001830,wireframe:true,transparent:true,opacity:.1}));
+  g.rotation.x=-Math.PI/2; g.position.y=-115; scene.add(g);
+}
+
+// ═══════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════
+const _p=new THREE.Vector3();
+function loop(){
+  requestAnimationFrame(loop);
+  const dt=Math.min(clock.getDelta(),.05);
+  skyT+=dt;
+
+  // Sky
+  const t=Math.sin(skyT*.018)*.5+.5;
+  renderer.setClearColor(new THREE.Color(0x000814).lerp(new THREE.Color(0x1a0428),t*.5));
+
+  // Fly
+  const spd=boostOn?SPD*2.2:SPD;
+
+  // Accumulate heading (turn rate) from mouse X — THIS is what makes it actually steer
+  heading += mx * 1.4 * dt;
+
+  // Smooth pitch and bank visuals
+  const tPitch=-my*.55, tBank=-mx*.7;
+  pitchA+=(tPitch-pitchA)*.07;
+  bankA +=(tBank -bankA )*.07;
+
+  // Visual rotations on the plane mesh
+  planeGroup.rotation.x=pitchA;
+  planeGroup.rotation.z=bankA;
+  planeGroup.rotation.y=heading;  // plane faces where it's flying
+
+  // MOVE in heading direction — proper 3D flight
+  const dx= Math.sin(heading)*spd*dt;
+  const dz=-Math.cos(heading)*spd*dt;
+  const dy= pitchA*spd*dt*.7;
+  planeGroup.position.x+=dx;
+  planeGroup.position.y=Math.max(-60,Math.min(130,planeGroup.position.y+dy+Math.sin(skyT*1.3)*.04));
+  planeGroup.position.z+=dz;
+
+  // Camera follow
+  // Camera sits BEHIND the plane: subtract forward vector * distance
+  // Forward = (sin(heading), 0, -cos(heading))
+  // Behind  = (-sin(heading), 0, +cos(heading))
+  const camDist=9;
+  const camX = planeGroup.position.x - Math.sin(heading)*camDist + bankA*1.5;
+  const camY = planeGroup.position.y + 2.2 - pitchA*2.5;
+  const camZ = planeGroup.position.z + Math.cos(heading)*camDist;
+  camera.position.lerp(new THREE.Vector3(camX,camY,camZ),.1);
+  // Look ahead along heading
+  const lookX = planeGroup.position.x + Math.sin(heading)*25;
+  const lookY = planeGroup.position.y + pitchA*.5;
+  const lookZ = planeGroup.position.z - Math.cos(heading)*25;
+  camera.lookAt(lookX,lookY,lookZ);
+
+  // FOV
+  camera.fov+=((boostOn?84:68)-camera.fov)*.09;
+  camera.updateProjectionMatrix();
+
+  // Engine
+  engLight.intensity=2.5+Math.sin(skyT*18)*.6+(boostOn?3:0);
+
+  // Vapor
+  vPos[vIdx*3  ]=planeGroup.position.x+(Math.random()-.5)*.3;
+  vPos[vIdx*3+1]=planeGroup.position.y+(Math.random()-.5)*.15;
+  vPos[vIdx*3+2]=planeGroup.position.z+1.6;
+  vGeo.attributes.position.needsUpdate=true;
+  vIdx=(vIdx+1)%VCNT;
+
+  // Portals
+  let nearDist=Infinity, nearIdx=-1;
+  portals.forEach((p,i)=>{
+    if(!p.alive)return;
+    p.g.children[0].rotation.z+=dt*.4;
+    p.g.children[2].rotation.z-=dt*.8;
+
+    // 2D label projection
+    _p.copy(p.g.position).project(camera);
+    const sx=((_p.x+1)/2)*innerWidth;
+    const sy=((1-_p.y)/2)*innerHeight;
+    const front=_p.z<1;
+    if(front){lblEls[i].style.left=sx+'px';lblEls[i].style.top=(sy-58)+'px';lblEls[i].classList.add('vis');}
+    else lblEls[i].classList.remove('vis');
+
+    const d=planeGroup.position.distanceTo(p.g.position);
+    if(d<nearDist){nearDist=d;nearIdx=i;}
+
+    // HIT
+    if(d<13&&p.alive){
+      p.alive=false;
+      lblEls[i].classList.remove('vis');
+      scene.remove(p.g);
+      onHit(p.id);
+    }
+  });
+
+  // Prox ring
+  document.getElementById('pr').classList.toggle('vis',nearDist<40&&nearIdx>=0&&portals[nearIdx]?.alive);
+
+  // Recycle clouds
+  clouds.forEach(c=>{
+    const dz=c.position.z-planeGroup.position.z;
+    if(dz>200){c.position.z=planeGroup.position.z-600-Math.random()*200;c.position.x=planeGroup.position.x+(Math.random()-.5)*500;}
+    if(dz<-800){c.position.z=planeGroup.position.z+200+Math.random()*200;c.position.x=planeGroup.position.x+(Math.random()-.5)*500;}
+  });
+
+  renderer.render(scene,camera);
+}
+
+// ═══════════════════════════════════════
+// PORTAL HIT
+// ═══════════════════════════════════════
+function onHit(id){
+  const hf=document.getElementById('hf');
+  hf.classList.add('on'); setTimeout(()=>hf.classList.remove('on'),180);
+  sparks(innerWidth/2,innerHeight/2,MSNS[id].col);
+  addXP(MSNS[id].xp);
+  doneMissions.add(id);
+  document.getElementById('achv').textContent=doneMissions.size+'/6';
+  setTimeout(()=>toast(MSNS[id].ach),600);
+  setTimeout(()=>openPanel(id),420);
+  // All 6 missions done → trigger thank-you after panel close delay
+  if(doneMissions.size===6){
+    setTimeout(()=>showThankYou(),4500);
+  }
+}
+
+// ═══════════════════════════════════════
+// MISSION PANELS
+// ═══════════════════════════════════════
+function openPanel(id){
+  const b=document.getElementById('pbody');
+  const tag=`MISSION 0${id+1} · ${MSNS[id].lbl}`;
+  let html=`<button class="mcl" onclick="closePanel()">✕ CLOSE</button><div class="mtag">${tag}</div>`;
+  if(id===0)html+=aboutHTML();
+  else if(id===1)html+=expHTML();
+  else if(id===2)html+=projHTML();
+  else if(id===3)html+=skillHTML();
+  else if(id===4)html+=certHTML();
+  else html+=contactHTML();
+  b.innerHTML=html;
+  document.getElementById('mpanel').classList.add('active');
+  if(id===1)setTimeout(()=>{document.querySelectorAll('.le').forEach((el,i)=>setTimeout(()=>el.classList.add('on'),i*180));},100);
+}
+function closePanel(){document.getElementById('mpanel').classList.remove('active');}
+
+// ── ABOUT ──
+function aboutHTML(){
+  return `<div class="mtitle">ABOUT AYUSH</div>
+  <div class="cgrid">
+    <div class="card" style="grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;">
+      <div class="ava">👨‍💻</div>
+      <div>
+        <div style="font-family:'Orbitron',monospace;font-size:clamp(18px,3.5vw,32px);font-weight:900;color:#fff;text-shadow:0 0 20px var(--cyan);">${R.name}</div>
+        <div style="color:var(--cyan);font-size:12px;letter-spacing:.15em;margin:6px 0;">${R.title}</div>
+        <div class="ir"><span class="lb">LOCATION</span>${R.loc}</div>
+        <div class="ir"><span class="lb">PHONE</span>${R.phone}</div>
+        <div class="ir"><span class="lb">EMAIL</span>${R.email}</div>
+      </div>
+    </div>
+    <div class="card gold">
+      <span class="ci">🎓</span>
+      <div class="ct">${R.edu[0].inst}</div>
+      <div class="cs">${R.edu[0].deg}</div>
+      <div class="cb">${R.edu[0].period} · ${R.edu[0].loc}<br><span style="color:var(--gold);font-size:14px;font-weight:700;">${R.edu[0].detail}</span></div>
+    </div>
+    <div class="card">
+      <span class="ci">🏫</span>
+      <div class="ct">${R.edu[1].inst}</div>
+      <div class="cs">${R.edu[1].deg}</div>
+      <div class="cb">${R.edu[1].period} · ${R.edu[1].loc}<br><span style="color:var(--cyan);font-size:14px;font-weight:700;">${R.edu[1].detail}</span></div>
+    </div>
+    <div class="card purple" style="grid-column:1/-1;">
+      <span class="ci">💬</span>
+      <div class="cb" style="font-size:13px;line-height:1.9;color:rgba(255,255,255,.78);">Platform Engineer Intern with hands-on experience in backend development, REST APIs, and scalable web applications using Node.js and React. Passionate about building reliable, production-grade systems and collaborating across engineering teams to ship great products.</div>
+    </div>
+  </div>`;
+}
+
+// ── EXPERIENCE ──
+function expHTML(){
+  const e=R.exp;
+  return `<div class="mtitle">EXPERIENCE</div>
+  <div class="card gold" style="margin-bottom:22px;">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div><span class="ci">⚡</span><div class="ct" style="font-size:16px;">${e.co}</div><div class="cs" style="color:var(--gold);font-size:13px;">${e.role}</div></div>
+      <div style="text-align:right;font-size:11px;color:rgba(255,255,255,.45);"><div style="color:var(--cyan);margin-bottom:4px;">${e.period}</div><div>${e.type}</div></div>
+    </div>
+  </div>
+  <div id="logstream">${e.bullets.map(b=>`<div class="le"><span class="lpfx">[ SYS ]</span><span>${b}</span></div>`).join('')}</div>`;
+}
+
+// ── PROJECTS ──
+function projHTML(){
+  const tc={purple:'p',blue:'c',green:'g'};
+  const bc={purple:'purple',blue:'',green:'green'};
+  return `<div class="mtitle">PROJECT BATTLE ARENA</div>
+  <div class="cgrid">${R.projects.map(p=>`
+    <div class="card ${bc[p.col]||''}">
+      <span class="ci">${p.icon}</span>
+      <div class="ct">${p.name}</div><div class="cs">${p.date}</div>
+      <ul class="blist">${p.bullets.map(b=>`<li>${b}</li>`).join('')}</ul>
+      <div class="ctags">${p.stack.map(s=>`<span class="tag ${tc[p.col]||'c'}">${s}</span>`).join('')}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ── SKILLS ──
+let collected=new Set();
+const allSkills=Object.values(R.skills).flat().length;
+function skillHTML(){
+  let h=`<div class="mtitle">SKILL POWER-UP ZONE</div>
+  <div class="pbox">
+    <div style="font-size:9px;letter-spacing:.3em;color:var(--neon);margin-bottom:4px;">TECH POWER LEVEL</div>
+    <div class="pnum" id="spn">${Math.round(techPow)}%</div>
+    <div class="ptrack"><div class="pfill" id="spf" style="width:${techPow}%;"></div></div>
+    <div style="font-size:9px;color:rgba(57,255,20,.5);margin-top:6px;" id="splbl">CLICK SKILLS TO CHARGE</div>
+  </div>`;
+  Object.entries(R.skills).forEach(([cat,skills])=>{
+    h+=`<div class="stitle">▸ ${cat}</div><div class="swrap">`;
+    skills.forEach(s=>h+=`<div class="schip${collected.has(s)?' lit':''}" onclick="collectSkill(this,'${s}')">${s}</div>`);
+    h+='</div>';
+  });
+  return h;
+}
+function collectSkill(el,name){
+  if(collected.has(name))return;
+  collected.add(name);
+  el.classList.add('lit');
+  const pct=Math.round((collected.size/allSkills)*100);
+  addTechPow(100/allSkills); addXP(12);
+  const r=el.getBoundingClientRect();
+  sparks(r.left+r.width/2,r.top+r.height/2,0x39ff14);
+  const n=document.getElementById('spn'),f=document.getElementById('spf'),l=document.getElementById('splbl');
+  if(n){n.textContent=pct+'%';f.style.width=pct+'%';}
+  if(pct>=100&&l){l.textContent='🔥 STACK MASTER MODE ACTIVATED!';l.style.color='var(--gold)';l.style.fontSize='13px';toast('🔥 STACK MASTER MODE ACTIVATED!');}
+}
+
+// ── CERTS ──
+function certHTML(){
+  return `<div class="mtitle">CERTIFICATION VAULT</div>
+  <div style="text-align:center;font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:.3em;margin-bottom:22px;">✦ HALL OF ACHIEVEMENT ✦</div>
+  <div class="certgrid">${R.certs.map(c=>`<div class="certcard"><span class="ci">${c.icon}</span><div class="cname">${c.name}</div><div class="csrc">${c.src}</div></div>`).join('')}</div>`;
+}
+
+// ── CONTACT ──
+function contactHTML(){
+  return `<div class="mtitle">FINAL TRANSMISSION</div>
+  <div style="text-align:center;padding:16px 0;">
+    <div style="font-size:52px;margin-bottom:14px;">🌌</div>
+    <div style="font-family:'Orbitron',monospace;font-size:clamp(18px,3.5vw,36px);font-weight:900;color:#fff;text-shadow:0 0 40px var(--cyan),0 0 80px var(--plasma);margin-bottom:6px;">${R.name}</div>
+    <div style="font-size:12px;color:rgba(0,245,255,.6);letter-spacing:.2em;margin-bottom:24px;">${R.title}</div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin:18px 0;">
+      <div style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;">📍 <span style="color:var(--cyan);">${R.loc}</span></div>
+      <div style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;">📞 <span style="color:var(--cyan);">${R.phone}</span></div>
+      <div style="font-size:12px;color:rgba(255,255,255,.6);display:flex;gap:8px;">✉️ <span style="color:var(--cyan);">${R.email}</span></div>
+    </div>
+    <div style="font-family:'Orbitron',monospace;font-size:clamp(14px,2.5vw,26px);font-weight:900;color:#fff;text-shadow:0 0 40px var(--cyan);margin:24px 0 8px;letter-spacing:.04em;">THANK YOU FOR FLYING WITH AYUSH ✈️</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.3em;margin-bottom:26px;">MISSION COMPLETE · LINK UP FOR LIFTOFF</div>
+    <div class="prow">
+      <a href="https://linkedin.com/in/ayush-tanay" target="_blank" class="pbtn pb-blue">🌍 LINKEDIN</a>
+      <a href="https://github.com/ayush-kumar" target="_blank" class="pbtn pb-purple">💻 GITHUB</a>
+      <a href="mailto:${R.email}" class="pbtn pb-gold">📧 EMAIL</a>
+    </div>
+    <div style="margin-top:28px;font-size:11px;color:rgba(0,245,255,.3);letter-spacing:.25em;font-family:'Orbitron',monospace;">SESSION XP: <span style="color:var(--gold);">${xp}</span></div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// BOOST
+// ═══════════════════════════════════════
+function boostStart(){
+  if(boostOn)return; boostOn=true; addXP(8);
+  sc.width=innerWidth; sc.height=innerHeight; sc.style.opacity='1';
+  drawSL();
+  let n=0;const si=setInterval(()=>{if(!boostOn||++n>10){clearInterval(si);return;}camera.position.x+=(Math.random()-.5)*.3;camera.position.y+=(Math.random()-.5)*.2;},50);
+}
+function boostEnd(){boostOn=false;sc.style.opacity='0';cancelAnimationFrame(sAnim);}
+function drawSL(){
+  if(!boostOn)return;
+  sctx.clearRect(0,0,sc.width,sc.height);
+  const cx=sc.width/2,cy=sc.height/2;
+  for(let i=0;i<60;i++){
+    const a=Math.random()*Math.PI*2,d=80+Math.random()*380,l=70+Math.random()*160;
+    const x=cx+Math.cos(a)*d,y=cy+Math.sin(a)*d;
+    const gr=sctx.createLinearGradient(x,y,x+Math.cos(a)*l,y+Math.sin(a)*l);
+    gr.addColorStop(0,'rgba(0,245,255,0)');gr.addColorStop(.5,'rgba(0,245,255,.4)');gr.addColorStop(1,'rgba(0,245,255,0)');
+    sctx.strokeStyle=gr;sctx.lineWidth=.8+Math.random()*1.5;
+    sctx.beginPath();sctx.moveTo(x,y);sctx.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);sctx.stroke();
+  }
+  sAnim=requestAnimationFrame(drawSL);
+}
+
+// ═══════════════════════════════════════
+// HUD HELPERS
+// ═══════════════════════════════════════
+function addXP(a){xp+=a;const el=document.getElementById('xpv');el.textContent=xp;el.style.transform='scale(1.35)';el.style.textShadow='0 0 30px var(--gold)';setTimeout(()=>{el.style.transform='';el.style.textShadow='';},300);}
+function addTechPow(a){techPow=Math.min(techPow+a,100);document.getElementById('pwv').textContent=Math.round(techPow)+'%';document.getElementById('pb').style.width=techPow+'%';}
+function toast(txt){document.getElementById('tntxt').textContent=txt;const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
+function sparks(x,y,c=0x00f5ff){
+  const hex='#'+c.toString(16).padStart(6,'0');
+  for(let i=0;i<24;i++){
+    const el=document.createElement('div');el.className='spark';
+    const a=Math.random()*Math.PI*2,d=60+Math.random()*140;
+    el.style.cssText=`left:${x-2.5}px;top:${y-2.5}px;background:${hex};box-shadow:0 0 6px ${hex};--tx:${Math.cos(a)*d}px;--ty:${Math.sin(a)*d}px;animation-duration:${.5+Math.random()*.6}s;`;
+    document.body.appendChild(el);setTimeout(()=>el.remove(),1200);
+  }
+}
+
+setInterval(()=>{if(started)addXP(3);},4000);
+</script>
+
+<!-- THANK YOU OVERLAY -->
+<div id="ty-overlay" style="display:none;position:fixed;inset:0;z-index:900;background:#000;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;">
+  <div id="ty-stars" style="position:absolute;inset:0;"></div>
+  <div id="ty-content" style="position:relative;z-index:2;text-align:center;padding:20px;opacity:0;transition:opacity 1.5s;">
+    <div id="ty-plane" style="font-size:clamp(40px,8vw,90px);margin-bottom:20px;display:inline-block;animation:tyFly 3s ease-in-out infinite;">✈️</div>
+    <div style="font-family:'Orbitron',monospace;font-size:clamp(10px,1.5vw,14px);color:var(--cyan);letter-spacing:.5em;margin-bottom:12px;text-shadow:0 0 20px var(--cyan);">MISSION COMPLETE · ALL PORTALS UNLOCKED</div>
+    <div style="font-family:'Orbitron',monospace;font-size:clamp(22px,5vw,62px);font-weight:900;color:#fff;text-shadow:0 0 40px var(--cyan),0 0 100px var(--plasma);margin-bottom:8px;line-height:1.2;">THANK YOU FOR FLYING<br>WITH AYUSH ✈</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:clamp(12px,1.8vw,20px);color:var(--gold);text-shadow:0 0 20px var(--gold);margin:18px 0 28px;letter-spacing:.15em;">Platform Engineer · Full Stack Developer · KIIT 2027</div>
+    <!-- Star-text trail -->
+    <div style="font-family:'Share Tech Mono',monospace;font-size:clamp(9px,1.1vw,13px);color:rgba(0,245,255,.5);letter-spacing:.25em;margin-bottom:32px;" id="ty-xp-txt"></div>
+    <!-- Buttons as planets -->
+    <div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-bottom:40px;">
+      <a href="https://linkedin.com/in/ayush-tanay" target="_blank" class="pbtn pb-blue" style="animation:tyBtnPop .5s 0.2s both;">🌍 LINKEDIN</a>
+      <a href="https://github.com/ayush-kumar" target="_blank" class="pbtn pb-purple" style="animation:tyBtnPop .5s 0.5s both;">💻 GITHUB</a>
+      <a href="mailto:ayush.tanay2314@gmail.com" class="pbtn pb-gold" style="animation:tyBtnPop .5s 0.8s both;">📧 EMAIL</a>
+    </div>
+    <button onclick="restartGame()" style="font-family:'Orbitron',monospace;font-size:11px;letter-spacing:.25em;color:rgba(0,245,255,.5);background:none;border:1px solid rgba(0,245,255,.3);padding:10px 28px;cursor:pointer;transition:all .2s;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);">↺ FLY AGAIN</button>
+  </div>
+</div>
+<style>
+@keyframes tyFly{0%,100%{transform:translateX(-30px) rotate(-5deg)}50%{transform:translateX(30px) rotate(5deg)}}
+@keyframes tyBtnPop{0%{opacity:0;transform:scale(.5) translateY(20px)}100%{opacity:1;transform:none}}
+@keyframes starFloat{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-200px)}}
+</style>
+
+<script>
+function showThankYou(){
+  const ov=document.getElementById('ty-overlay');
+  ov.style.display='flex';
+  // Spawn floating stars
+  const sc=document.getElementById('ty-stars');
+  for(let i=0;i<80;i++){
+    const s=document.createElement('div');
+    const size=1+Math.random()*3;
+    s.style.cssText=`position:absolute;width:${size}px;height:${size}px;border-radius:50%;background:#fff;left:${Math.random()*100}%;top:${Math.random()*100}%;opacity:0;animation:starFloat ${3+Math.random()*5}s ${Math.random()*3}s ease-in-out infinite;`;
+    sc.appendChild(s);
+  }
+  // Animated star text
+  const letters='★ AYUSH KUMAR ★ PLATFORM ENGINEER ★ FULL STACK DEV ★ KIIT 2027 ★';
+  let li=0;
+  const xt=document.getElementById('ty-xp-txt');
+  const ti=setInterval(()=>{
+    if(li<letters.length){xt.textContent+=letters[li];li++;}
+    else clearInterval(ti);
+  },45);
+  // XP summary
+  setTimeout(()=>{
+    xt.innerHTML+='<br><br><span style="color:var(--gold);">TOTAL XP EARNED: '+xp+'</span> &nbsp;|&nbsp; <span style="color:var(--neon);">MISSIONS: 6/6</span> &nbsp;|&nbsp; <span style="color:var(--plasma);">TECH POWER: '+Math.round(techPow)+'%</span>';
+  },3200);
+  // Fade in content
+  setTimeout(()=>{document.getElementById('ty-content').style.opacity='1';},100);
+  // Fireworks
+  for(let i=0;i<8;i++){
+    setTimeout(()=>{
+      sparks(Math.random()*innerWidth,Math.random()*innerHeight*.7,[0x00f5ff,0xffd700,0xbf5fff,0x39ff14,0xff6b00][Math.floor(Math.random()*5)]);
+    },i*400);
+  }
+}
+function restartGame(){
+  location.reload();
+}
+</script>
+
+</body>
+</html>
