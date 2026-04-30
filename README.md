@@ -40,9 +40,7 @@ It highlights the projects I’ve built, technologies I’ve worked with, and my
 ```
 portfolio/
 ├── index.html
-├── style.css
-├── script.js
-└── assets/
+
 ```
 
 ---
